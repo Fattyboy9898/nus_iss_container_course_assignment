@@ -1,0 +1,9 @@
+docker network create mynet
+
+docker create volume data
+
+docker run --network mynet --name myapp --rm stackupiss/northwind-app:v1
+
+docker run --network mynet --name mydb -p 8080:8080 --rm -v data:/app/public\
+stackupiss/northwind-db:v1
+

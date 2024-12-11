@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deploy
+  namespace: bggns
+  labels:
+    app: app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      name: app-pod
+      namespace: bggns
+      labels:
+        app: app
+    spec:
+      containers:
+      - name : app
+        image: stackupiss/bgg-backend:v1
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - configMapRef:
+              name: "bgg-cm"
+          - secretRef:
+              name: "bgg-secret"
+        ports:
+        - containerPort: 8000

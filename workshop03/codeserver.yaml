@@ -1,0 +1,109 @@
+--- 
+apiVersion: apps/v1 
+kind: Deployment 
+metadata: 
+  name: codeserver-deploy 
+  namespace: codeserver 
+  labels:
+    app: codeserver
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: codeserver
+      name: codeserver-po 
+  strategy:
+    type: RollingUpdate 
+    rollingUpdate: 
+      maxSurge: 0
+      maxUnavailable: 1
+  template: 
+    metadata: 
+      name: codeserver-po 
+      labels:
+        app: codeserver
+        name: codeserver-po 
+    spec: 
+      volumes:
+      - name: src-vol 
+        persistentVolumeClaim: 
+          claimName: codeserver-pvc
+      containers:
+      - name: codeserver-container 
+        image: linuxserver/code-server:amd64-4.95.3
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: codeserver-cm
+        - secretRef:
+            name: codeserver-secret
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - name: src-vol 
+          mountPath: /config/workspace
+        resources:
+          requests:
+            memory: 512M
+            cpu: 200m
+          limits:
+            memory: 512M
+            cpu: 200m
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codeserver-svc
+  namespace: codeserver
+  labels:
+    app: codeserver
+spec:
+  type: ClusterIP
+  selector:
+    app: codeserver
+    name: codeserver-po 
+  ports:
+  - name: codeserver
+    port: 8443
+    targetPort: 8443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: codeserver-ing
+  namespace: codeserver
+  labels:
+    app: codeserver
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: codeserver-146.190.201.5.nip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: codeserver-svc
+            port:
+              number: 8443
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codeserver-svc
+  namespace: codeserver
+  labels:
+    app: codeserver
+spec:
+  type: ClusterIP
+  selector:
+    app: codeserver
+    name: codeserver-po
+  ports:
+  - name: codeserver-port
+    protocol: TCP
+    port: 8443
+    targetPort: 8443
